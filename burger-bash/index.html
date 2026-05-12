@@ -661,13 +661,55 @@
     border-radius: var(--radius-sm);
     padding: 14px 16px;
     display: grid;
-    grid-template-columns: 78px 1fr 80px 32px 80px 1fr 100px;
+    grid-template-columns: 78px 1fr 110px 32px 110px 1fr 80px;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 8px;
     box-shadow: var(--shadow-sm);
     transition: border-color 0.15s ease;
   }
+  .sets-input { display: flex; gap: 6px; }
+  .set-input {
+    width: 100%;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    padding: 6px 0;
+    color: var(--navy);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Pool cards */
+  .pools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 800px) { .pools-grid { grid-template-columns: 1fr; } }
+  .pool-card {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .pool-card.pool-a { border-color: var(--orange); }
+  .pool-card.pool-b { border-color: #1A8FE3; }
+  .pool-card.pool-a .pool-header { color: var(--orange-deep); }
+  .pool-card.pool-b .pool-header { color: #0E5C9C; }
+  .pool-card .pool-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pool-card .standings-table { box-shadow: none; border: 1px solid var(--gray-200); }
+  .pool-card .standings-table th { background: var(--navy); }
   .court-tag {
     background: var(--navy);
     color: white;
@@ -1069,12 +1111,12 @@
     .team-banner { font-size: 20px; height: 60px; padding: 0 12px; }
     .team-player { padding: 10px 12px; font-size: 14px; min-height: 44px; }
     .team-player .move-hint { display: none; }
-    /* Schedule match rows */
+    /* Schedule match rows — mobile */
     .match-row {
       grid-template-columns: 64px 1fr 1fr;
       grid-template-areas:
         "court team1 team2"
-        "court score1 score2"
+        "court sets1 sets2"
         "status status status";
       gap: 8px;
       padding: 12px;
@@ -1082,11 +1124,11 @@
     .match-row .court-tag { grid-area: court; align-self: stretch; display: flex; align-items: center; justify-content: center; font-size: 12px; padding: 0; }
     .match-row .match-team:first-of-type { grid-area: team1; justify-content: flex-start; }
     .match-row .match-team:last-of-type { grid-area: team2; justify-content: flex-end; text-align: right; }
-    .match-row .score-input:first-of-type { grid-area: score1; }
-    .match-row .score-input:nth-of-type(2) { grid-area: score2; }
+    .match-row .sets-input:first-of-type { grid-area: sets1; }
+    .match-row .sets-input:last-of-type { grid-area: sets2; }
     .match-row .vs { display: none; }
     .match-row .match-status { grid-area: status; text-align: center; padding-top: 4px; border-top: 1px dashed var(--gray-200); display: block; }
-    .score-input { font-size: 28px; padding: 10px 0; }
+    .set-input { font-size: 22px; padding: 8px 0; }
     .round-title { font-size: 14px; padding-bottom: 8px; margin-bottom: 8px; }
     /* Tabs sticky offsets */
     .tabs { position: sticky; }
@@ -1376,7 +1418,7 @@
   <!-- ============ SCHEDULE ============ -->
   <section class="panel" id="panel-schedule">
     <h2 class="section-title">Schedule</h2>
-    <p class="section-sub">Round-robin pool play across <strong id="schedCourtsLabel">2</strong> nets starting at <strong id="schedStartLabel">11:00 AM</strong>. Enter the final score of each match — standings & playoffs update automatically.</p>
+    <p class="section-sub">Pool play across <strong id="schedCourtsLabel">2</strong> nets starting at <strong id="schedStartLabel">11:00 AM</strong>. Each team plays every other team in their pool. Best record per pool seeds the playoff bracket.</p>
 
     <div class="row" style="margin-bottom:18px">
       <span class="muted" id="scheduleSummary"></span>
@@ -1690,6 +1732,7 @@ function load() {
       if (state.roster === undefined) state.roster = DEFAULT_ROSTER;
       if (state.alternates === undefined) state.alternates = DEFAULT_ALTERNATES;
       if (state.girls === undefined) state.girls = DEFAULT_GIRLS;
+      migrateToTwoPoolFormat();
       // Dedupe: any name in alternates shouldn't also appear in main roster
       const altSet = new Set((state.alternates || '').split('\n').map(s => s.trim().toLowerCase()).filter(Boolean));
       if (altSet.size) {
@@ -1706,6 +1749,22 @@ function load() {
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (cloudEnabled && !receivingRemote) scheduleCloudWrite();
+}
+
+// Returns true if state was changed (so caller can persist)
+function migrateToTwoPoolFormat() {
+  let changed = false;
+  if (state.teams && state.teams.length && !state.teams[0].pool) {
+    const half = Math.ceil(state.teams.length / 2);
+    state.teams.forEach((t, i) => { t.pool = i < half ? 'A' : 'B'; });
+    state.matches = []; // invalidate old single-pool schedule
+    changed = true;
+  }
+  if (state.matches && state.matches.length && state.matches[0] && 'team1Score' in state.matches[0] && !('team1Set1' in state.matches[0])) {
+    state.matches = []; // can't split a single score into two sets
+    changed = true;
+  }
+  return changed;
 }
 
 /* =========================================================
@@ -1863,7 +1922,8 @@ function generateTeams() {
     showToast(`⚠️ Only ${girls.length} girls for ${n} teams — some teams won't have one`, 'error');
   }
   const teams = [];
-  for (let i = 0; i < n; i++) teams.push({ id: uid(), name: '', players: [], color: TEAM_COLORS[i % TEAM_COLORS.length] });
+  const halfTeams = Math.ceil(n / 2);
+  for (let i = 0; i < n; i++) teams.push({ id: uid(), name: '', players: [], color: TEAM_COLORS[i % TEAM_COLORS.length], pool: i < halfTeams ? 'A' : 'B' });
   // Round-robin girls so each team gets ≥1 if possible
   girls.forEach((g, i) => teams[i % n].players.push(g));
   // Add guys to the smallest team each time — keeps team sizes balanced
@@ -1964,61 +2024,50 @@ function generateSchedule() {
   }
   confirmAction(
     'Generate new schedule?',
-    'This will create a fresh round-robin schedule and clear any existing match scores.',
+    'This will create fresh pool-play matches (round-robin within each pool) and clear any existing match scores.',
     () => {
       const matches = [];
-      const teams = state.teams;
-      // Round-robin via circle method
-      const n = teams.length;
-      const list = teams.map(t => t.id);
-      if (n % 2 === 1) list.push(null); // bye
-      const rounds = list.length - 1;
-      const half = list.length / 2;
-      const arr = list.slice();
-      for (let r = 0; r < rounds; r++) {
-        const roundMatches = [];
-        for (let i = 0; i < half; i++) {
-          const a = arr[i], b = arr[arr.length - 1 - i];
-          if (a && b) {
-            roundMatches.push({
-              id: uid(),
-              round: r + 1,
-              team1Id: a,
-              team2Id: b,
-              team1Score: null,
-              team2Score: null
-            });
+      // Generate round-robin within each pool
+      ['A', 'B'].forEach(pool => {
+        const poolTeams = state.teams.filter(t => (t.pool || 'A') === pool);
+        if (poolTeams.length < 2) return;
+        const list = poolTeams.map(t => t.id);
+        if (list.length % 2 === 1) list.push(null);
+        const rounds = list.length - 1;
+        const half = list.length / 2;
+        const arr = list.slice();
+        for (let r = 0; r < rounds; r++) {
+          for (let i = 0; i < half; i++) {
+            const a = arr[i], b = arr[arr.length - 1 - i];
+            if (a && b) {
+              matches.push({
+                id: uid(),
+                pool,
+                round: r + 1,
+                team1Id: a,
+                team2Id: b,
+                team1Set1: null, team1Set2: null,
+                team2Set1: null, team2Set2: null
+              });
+            }
           }
+          const fixed = arr.shift();
+          const last = arr.pop();
+          arr.unshift(last);
+          arr.unshift(fixed);
         }
-        matches.push(...roundMatches);
-        // rotate, keeping index 0 fixed
-        const fixed = arr.shift();
-        const last = arr.pop();
-        arr.unshift(last);
-        arr.unshift(fixed);
-      }
-      // Assign court + time slot: pack each round's games onto the available courts
-      const numCourts = Math.max(1, state.settings.numCourts || 2);
-      let slot = 0;
-      // Re-group by round to assign in batches
-      const byRound = {};
-      matches.forEach(m => { (byRound[m.round] = byRound[m.round] || []).push(m); });
-      Object.keys(byRound).map(Number).sort((a,b)=>a-b).forEach(r => {
-        const rm = byRound[r];
-        for (let i = 0; i < rm.length; i += numCourts) {
-          const batch = rm.slice(i, i + numCourts);
-          batch.forEach((m, c) => {
-            m.court = c + 1;
-            m.timeSlot = slot;
-          });
-          slot++;
-        }
+      });
+      // Court + time slot assignment: Pool A → Court 1, Pool B → Court 2 (both run in parallel)
+      let slotA = 0, slotB = 0;
+      matches.forEach(m => {
+        if (m.pool === 'A') { m.court = 1; m.timeSlot = slotA++; }
+        else { m.court = 2; m.timeSlot = slotB++; }
       });
       state.matches = matches;
       save();
-      const totalSlots = slot;
-      const lastTime = slotToTimeLabel(totalSlots - 1);
-      showToast(`📋 ${matches.length} matches · ${totalSlots} slots · finishes ~${lastTime}`, 'success');
+      const totalSlots = Math.max(slotA, slotB);
+      const lastTime = totalSlots > 0 ? slotToTimeLabel(totalSlots - 1) : '';
+      showToast(`📋 ${matches.length} matches · Pool A ${slotA} · Pool B ${slotB} · finishes ~${lastTime}`, 'success');
       renderSchedule();
     }
   );
@@ -2038,14 +2087,31 @@ function slotToTimeLabel(slot) {
 
 function teamById(id) { return state.teams.find(t => t.id === id); }
 
-function setMatchScore(matchId, side, val) {
+function setMatchSet(matchId, side, setNum, val) {
   const m = state.matches.find(x => x.id === matchId);
   if (!m) return;
   const n = val === '' ? null : Math.max(0, parseInt(val) || 0);
-  if (side === 1) m.team1Score = n;
-  else m.team2Score = n;
+  m[`team${side}Set${setNum}`] = n;
   save();
   renderAll();
+}
+
+// Returns { winnerId, t1Sets, t2Sets, t1Total, t2Total, complete } for a match
+function matchOutcome(m) {
+  const s11 = m.team1Set1, s12 = m.team1Set2, s21 = m.team2Set1, s22 = m.team2Set2;
+  if (s11 == null || s21 == null || s12 == null || s22 == null) {
+    return { complete: false };
+  }
+  const t1Sets = (s11 > s21 ? 1 : 0) + (s12 > s22 ? 1 : 0);
+  const t2Sets = (s21 > s11 ? 1 : 0) + (s22 > s12 ? 1 : 0);
+  const t1Total = s11 + s12;
+  const t2Total = s21 + s22;
+  let winnerId = null;
+  if (t1Sets > t2Sets) winnerId = m.team1Id;
+  else if (t2Sets > t1Sets) winnerId = m.team2Id;
+  else if (t1Total > t2Total) winnerId = m.team1Id;
+  else if (t2Total > t1Total) winnerId = m.team2Id;
+  return { complete: true, winnerId, t1Sets, t2Sets, t1Total, t2Total };
 }
 
 function renderSchedule() {
@@ -2058,41 +2124,53 @@ function renderSchedule() {
     return;
   }
   emptyEl.classList.add('hidden');
-  const played = state.matches.filter(m => m.team1Score != null && m.team2Score != null).length;
+  const played = state.matches.filter(m => matchOutcome(m).complete).length;
   const totalSlots = Math.max(...state.matches.map(m => (m.timeSlot ?? 0))) + 1;
   const lastTime = slotToTimeLabel(totalSlots - 1);
   const firstTime = slotToTimeLabel(0);
   document.getElementById('scheduleSummary').textContent = `${played}/${state.matches.length} complete · ${firstTime}–${lastTime} · ${state.settings.numCourts || 2} courts`;
-  // Group by timeSlot (fall back to round if missing for legacy data)
-  const bySlot = {};
-  state.matches.forEach(m => {
-    const key = m.timeSlot ?? `r${m.round}`;
-    (bySlot[key] = bySlot[key] || []).push(m);
-  });
-  const slotKeys = Object.keys(bySlot).sort((a, b) => {
-    const an = typeof a === 'string' && a.startsWith('r') ? parseInt(a.slice(1)) + 1000 : +a;
-    const bn = typeof b === 'string' && b.startsWith('r') ? parseInt(b.slice(1)) + 1000 : +b;
-    return an - bn;
-  });
-  list.innerHTML = slotKeys.map(k => {
-    const slotMatches = bySlot[k].sort((a, b) => (a.court || 1) - (b.court || 1));
-    const timeLabel = typeof k === 'string' && k.startsWith('r') ? `Round ${k.slice(1)}` : slotToTimeLabel(+k);
+  // Group matches by pool, then by timeSlot within pool
+  const renderPool = (pool) => {
+    const poolMatches = state.matches.filter(m => m.pool === pool);
+    if (!poolMatches.length) return '';
+    const bySlot = {};
+    poolMatches.forEach(m => {
+      const key = m.timeSlot ?? `r${m.round}`;
+      (bySlot[key] = bySlot[key] || []).push(m);
+    });
+    const slotKeys = Object.keys(bySlot).sort((a, b) => {
+      const an = typeof a === 'string' && a.startsWith('r') ? parseInt(a.slice(1)) + 1000 : +a;
+      const bn = typeof b === 'string' && b.startsWith('r') ? parseInt(b.slice(1)) + 1000 : +b;
+      return an - bn;
+    });
     return `
-    <div class="round-section">
-      <div class="round-title">⏰ ${timeLabel} <span style="float:right;font-size:11px;color:var(--gray-500);font-weight:600">Round ${slotMatches[0].round}</span></div>
-      ${slotMatches.map(m => renderMatchRow(m)).join('')}
-    </div>
-  `;}).join('');
+      <div class="pool-card pool-${pool.toLowerCase()}">
+        <div class="pool-header">${pool === 'A' ? '🟠' : '🔵'} POOL ${pool} · Court ${pool === 'A' ? '1' : '2'}</div>
+        ${slotKeys.map(k => {
+          const slotMatches = bySlot[k];
+          const timeLabel = typeof k === 'string' && k.startsWith('r') ? `Round ${k.slice(1)}` : slotToTimeLabel(+k);
+          return `
+            <div class="round-section" style="margin-bottom:14px">
+              <div class="round-title" style="margin-bottom:6px">⏰ ${timeLabel}</div>
+              ${slotMatches.map(m => renderMatchRow(m)).join('')}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  };
+  list.innerHTML = `<div class="pools-grid">${renderPool('A')}${renderPool('B')}</div>`;
 }
 
 function renderMatchRow(m) {
   const t1 = teamById(m.team1Id);
   const t2 = teamById(m.team2Id);
   if (!t1 || !t2) return '';
-  const done = m.team1Score != null && m.team2Score != null;
-  const w1 = done && m.team1Score > m.team2Score;
-  const w2 = done && m.team2Score > m.team1Score;
-  const courtLabel = m.court ? `Court ${m.court}` : '';
+  const out = matchOutcome(m);
+  const done = out.complete;
+  const w1 = done && out.winnerId === m.team1Id;
+  const w2 = done && out.winnerId === m.team2Id;
+  const courtLabel = m.court ? `Court ${m.court}` : (m.pool ? 'Pool '+m.pool : '');
   return `
     <div class="match-row ${done ? 'done' : ''}">
       <div class="court-tag">${courtLabel}</div>
@@ -2100,14 +2178,20 @@ function renderMatchRow(m) {
         <span class="dot" style="background:${t1.color}"></span>
         <span class="name">${escapeHtml(t1.name)}</span>
       </div>
-      <input class="score-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team1Score ?? ''}" placeholder="—" oninput="setMatchScore('${m.id}',1,this.value)">
+      <div class="sets-input">
+        <input class="set-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team1Set1 ?? ''}" placeholder="S1" aria-label="${escapeHtml(t1.name)} Set 1" oninput="setMatchSet('${m.id}',1,1,this.value)">
+        <input class="set-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team1Set2 ?? ''}" placeholder="S2" aria-label="${escapeHtml(t1.name)} Set 2" oninput="setMatchSet('${m.id}',1,2,this.value)">
+      </div>
       <div class="vs">VS</div>
-      <input class="score-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team2Score ?? ''}" placeholder="—" oninput="setMatchScore('${m.id}',2,this.value)">
+      <div class="sets-input">
+        <input class="set-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team2Set1 ?? ''}" placeholder="S1" aria-label="${escapeHtml(t2.name)} Set 1" oninput="setMatchSet('${m.id}',2,1,this.value)">
+        <input class="set-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team2Set2 ?? ''}" placeholder="S2" aria-label="${escapeHtml(t2.name)} Set 2" oninput="setMatchSet('${m.id}',2,2,this.value)">
+      </div>
       <div class="match-team right ${w2 ? 'winner' : ''}">
         <span class="name">${escapeHtml(t2.name)}</span>
         <span class="dot" style="background:${t2.color}"></span>
       </div>
-      <div class="match-status ${done ? 'done' : ''}">${done ? 'Final' : 'Pending'}</div>
+      <div class="match-status ${done ? 'done' : ''}">${done ? (out.t1Sets+'–'+out.t2Sets) : 'Pending'}</div>
     </div>
   `;
 }
@@ -2115,23 +2199,30 @@ function renderMatchRow(m) {
 /* =========================================================
    STANDINGS
 ========================================================= */
-function computeStandings() {
+function computeStandings(poolFilter) {
   const stats = {};
-  state.teams.forEach(t => {
-    stats[t.id] = { team: t, w: 0, l: 0, pf: 0, pa: 0, gp: 0 };
-  });
+  state.teams
+    .filter(t => !poolFilter || (t.pool || 'A') === poolFilter)
+    .forEach(t => {
+      stats[t.id] = { team: t, w: 0, l: 0, pf: 0, pa: 0, gp: 0, setsW: 0, setsL: 0 };
+    });
   state.matches.forEach(m => {
-    if (m.team1Score == null || m.team2Score == null) return;
+    if (poolFilter && m.pool !== poolFilter) return;
+    const out = matchOutcome(m);
+    if (!out.complete) return;
     const a = stats[m.team1Id], b = stats[m.team2Id];
     if (!a || !b) return;
     a.gp++; b.gp++;
-    a.pf += m.team1Score; a.pa += m.team2Score;
-    b.pf += m.team2Score; b.pa += m.team1Score;
-    if (m.team1Score > m.team2Score) { a.w++; b.l++; }
-    else if (m.team2Score > m.team1Score) { b.w++; a.l++; }
+    a.pf += out.t1Total; a.pa += out.t2Total;
+    b.pf += out.t2Total; b.pa += out.t1Total;
+    a.setsW += out.t1Sets; a.setsL += out.t2Sets;
+    b.setsW += out.t2Sets; b.setsL += out.t1Sets;
+    if (out.winnerId === m.team1Id) { a.w++; b.l++; }
+    else if (out.winnerId === m.team2Id) { b.w++; a.l++; }
   });
   return Object.values(stats).sort((x, y) => {
     if (y.w !== x.w) return y.w - x.w;
+    if ((y.setsW - y.setsL) !== (x.setsW - x.setsL)) return (y.setsW - y.setsL) - (x.setsW - x.setsL);
     if ((y.pf - y.pa) !== (x.pf - x.pa)) return (y.pf - y.pa) - (x.pf - x.pa);
     return y.pf - x.pf;
   });
@@ -2139,42 +2230,49 @@ function computeStandings() {
 
 function renderStandings() {
   const wrap = document.getElementById('standingsWrap');
-  const rows = computeStandings();
-  if (!rows.length) {
+  if (!state.teams.length) {
     wrap.innerHTML = `<div class="empty-state"><div class="ic">📊</div><p>No teams yet. Add teams to get started.</p></div>`;
     return;
   }
-  const cutoff = state.playoffs.size || 4;
-  wrap.innerHTML = `
-    <table class="standings-table">
-      <thead>
-        <tr>
-          <th style="width:60px">Rank</th>
-          <th>Team</th>
-          <th class="num">GP</th>
-          <th class="num">W</th>
-          <th class="num">L</th>
-          <th class="num">PF</th>
-          <th class="num">PA</th>
-          <th class="num">DIFF</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map((r, i) => `
-          <tr class="${i < cutoff ? 'qualify' : ''}">
-            <td><span class="rank-badge ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</span></td>
-            <td><div class="team-cell"><span class="dot" style="background:${r.team.color}"></span>${escapeHtml(r.team.name)}</div></td>
-            <td class="num">${r.gp}</td>
-            <td class="num"><strong>${r.w}</strong></td>
-            <td class="num">${r.l}</td>
-            <td class="num">${r.pf}</td>
-            <td class="num">${r.pa}</td>
-            <td class="num">${r.pf - r.pa > 0 ? '+' : ''}${r.pf - r.pa}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-    <p class="muted" style="margin-top:12px">Highlighted rows = qualifying for ${cutoff}-team playoff bracket.</p>
+  const renderTable = (pool) => {
+    const rows = computeStandings(pool);
+    if (!rows.length) return '';
+    return `
+      <div class="pool-card pool-${pool.toLowerCase()}" style="margin-bottom:16px">
+        <div class="pool-header">${pool === 'A' ? '🟠' : '🔵'} POOL ${pool}</div>
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th style="width:50px">Rank</th>
+              <th>Team</th>
+              <th class="num">GP</th>
+              <th class="num">W</th>
+              <th class="num">L</th>
+              <th class="num">SETS</th>
+              <th class="num">PF</th>
+              <th class="num">DIFF</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r, i) => `
+              <tr>
+                <td><span class="rank-badge ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</span></td>
+                <td><div class="team-cell"><span class="dot" style="background:${r.team.color}"></span>${escapeHtml(r.team.name)}</div></td>
+                <td class="num">${r.gp}</td>
+                <td class="num"><strong>${r.w}</strong></td>
+                <td class="num">${r.l}</td>
+                <td class="num">${r.setsW}–${r.setsL}</td>
+                <td class="num">${r.pf}</td>
+                <td class="num">${r.pf - r.pa > 0 ? '+' : ''}${r.pf - r.pa}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  };
+  wrap.innerHTML = renderTable('A') + renderTable('B') + `
+    <p class="muted" style="margin-top:8px">Sort: Wins → Set differential → Point differential → Points for. All teams advance to playoffs.</p>
   `;
 }
 
@@ -2199,7 +2297,16 @@ function clearBracket() {
 
 function seedBracket() {
   const size = state.playoffs.size || 4;
-  const standings = computeStandings();
+  // Combine pool standings: alternate top finishers from each pool (A1, B1, A2, B2, ...)
+  const aRows = computeStandings('A');
+  const bRows = computeStandings('B');
+  const combined = [];
+  const maxLen = Math.max(aRows.length, bRows.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (aRows[i]) combined.push(aRows[i]);
+    if (bRows[i]) combined.push(bRows[i]);
+  }
+  const standings = combined.length ? combined : computeStandings();
   if (standings.length < size) {
     showToast(`Need at least ${size} teams to seed a ${size}-team bracket`, 'error');
     return;
@@ -2378,7 +2485,7 @@ function renderTeams() {
     return `
       <div class="team-card">
         <div class="team-banner" style="background:linear-gradient(135deg, ${t.color} 0%, ${shadeColor(t.color, -20)} 100%)">
-          <span class="seed">#${rec.rank}</span>
+          <span class="seed">${t.pool ? 'Pool '+t.pool : ''} · #${rec.rank}</span>
           ${escapeHtml(t.name)}
         </div>
         <div class="team-body">
@@ -2469,8 +2576,8 @@ function renderVenue() {
 }
 
 function renderDashboard() {
-  const played = state.matches.filter(m => m.team1Score != null && m.team2Score != null).length;
-  const totalPts = state.matches.reduce((s, m) => s + (m.team1Score || 0) + (m.team2Score || 0), 0);
+  const played = state.matches.filter(m => matchOutcome(m).complete).length;
+  const totalPts = state.matches.reduce((s, m) => s + (m.team1Set1 || 0) + (m.team1Set2 || 0) + (m.team2Set1 || 0) + (m.team2Set2 || 0), 0);
   const standings = computeStandings();
   const leader = standings[0];
   const totalPlayers = state.teams.reduce((s, t) => s + (t.players || []).length, 0);
@@ -2511,7 +2618,7 @@ function renderDashboard() {
   }
 
   // Recent results
-  const recent = state.matches.filter(m => m.team1Score != null && m.team2Score != null).slice(-5).reverse();
+  const recent = state.matches.filter(m => matchOutcome(m).complete).slice(-5).reverse();
   const recentEl = document.getElementById('recentResults');
   if (!recent.length) {
     recentEl.innerHTML = `<div class="empty-state" style="padding:16px"><p>No completed matches yet.</p></div>`;
@@ -2519,11 +2626,12 @@ function renderDashboard() {
     recentEl.innerHTML = recent.map(m => {
       const t1 = teamById(m.team1Id); const t2 = teamById(m.team2Id);
       if (!t1 || !t2) return '';
-      const w1 = m.team1Score > m.team2Score;
+      const out = matchOutcome(m);
+      const w1 = out.winnerId === m.team1Id;
       return `
         <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--gray-200);font-size:14px">
           <span style="flex:1;font-weight:${w1?700:500};color:${w1?'var(--orange-deep)':'inherit'}">${escapeHtml(t1.name)}</span>
-          <span style="font-family:'Bebas Neue';font-size:20px;color:var(--navy)">${m.team1Score} – ${m.team2Score}</span>
+          <span style="font-family:'Bebas Neue';font-size:18px;color:var(--navy)">${out.t1Sets}–${out.t2Sets} <span style="font-size:11px;color:var(--gray-500);font-family:Inter">(${out.t1Total}-${out.t2Total})</span></span>
           <span style="flex:1;text-align:right;font-weight:${!w1?700:500};color:${!w1?'var(--orange-deep)':'inherit'}">${escapeHtml(t2.name)}</span>
         </div>
       `;
@@ -2641,22 +2749,7 @@ function renderAdmin() {
   if (!state.matches.length) {
     ml.innerHTML = '<p class="muted">No matches yet. Generate a schedule first.</p>';
   } else {
-    ml.innerHTML = state.matches.map(m => {
-      const t1 = teamById(m.team1Id); const t2 = teamById(m.team2Id);
-      if (!t1 || !t2) return '';
-      const time = m.timeSlot != null ? slotToTimeLabel(m.timeSlot) : `R${m.round}`;
-      return `
-        <div class="match-row">
-          <div class="court-tag">${m.court ? 'Court '+m.court : 'R'+m.round}</div>
-          <div class="match-team"><span class="dot" style="background:${t1.color}"></span><span class="name">${escapeHtml(t1.name)}</span></div>
-          <input class="score-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team1Score ?? ''}" placeholder="—" oninput="setMatchScore('${m.id}',1,this.value)">
-          <div class="vs">VS</div>
-          <input class="score-input" type="number" inputmode="numeric" pattern="[0-9]*" min="0" value="${m.team2Score ?? ''}" placeholder="—" oninput="setMatchScore('${m.id}',2,this.value)">
-          <div class="match-team right"><span class="name">${escapeHtml(t2.name)}</span><span class="dot" style="background:${t2.color}"></span></div>
-          <div class="match-status">${time}</div>
-        </div>
-      `;
-    }).join('');
+    ml.innerHTML = state.matches.map(renderMatchRow).join('');
   }
 }
 
@@ -2678,7 +2771,7 @@ function saveSettings() {
 function confirmReset(scope) {
   if (scope === 'scores') {
     confirmAction('Reset all scores?', 'Match scores and the playoff bracket will be cleared. Teams stay.', () => {
-      state.matches.forEach(m => { m.team1Score = null; m.team2Score = null; });
+      state.matches.forEach(m => { m.team1Set1 = null; m.team1Set2 = null; m.team2Set1 = null; m.team2Set2 = null; });
       state.playoffs.bracket = [];
       save();
       renderAll();
@@ -2922,12 +3015,15 @@ function applyRemoteState(remote) {
   state.girls = remote.girls !== undefined ? remote.girls : DEFAULT_GIRLS;
   state.settings = Object.assign({}, DEFAULT_SETTINGS, remote.settings || {});
   state.settings.adminPassword = localPwd || DEFAULT_SETTINGS.adminPassword;
+  const migrated = migrateToTwoPoolFormat();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (playersInput) playersInput.value = state.roster || '';
   if (altInput) altInput.value = state.alternates || '';
   updatePlayerCount();
   renderAll();
   if (state.settings.location !== oldLocation) fetchWeather();
+  // If we migrated locally, push the fix back to the cloud so other devices get it
+  if (migrated && cloudEnabled) scheduleCloudWrite();
 }
 
 try {
