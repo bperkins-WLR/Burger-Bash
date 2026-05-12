@@ -150,6 +150,24 @@
   .weather-pill .icon { font-size: 18px; }
   .weather-pill .temp { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--orange-light); }
 
+  /* Cloud sync status pill */
+  .cloud-status {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .cloud-status.connecting { background: rgba(255,255,255,0.16); }
+  .cloud-status.synced { background: rgba(46,204,113,0.3); border-color: rgba(46,204,113,0.55); }
+  .cloud-status.offline { background: rgba(231,76,60,0.3); border-color: rgba(231,76,60,0.55); }
+  .cloud-status.disabled { background: rgba(149,165,166,0.2); border-color: rgba(149,165,166,0.4); }
+
   /* ---------- TABS ---------- */
   .tabs {
     background: white;
@@ -1195,6 +1213,7 @@
         <span class="icon">⛅</span>
         <span><span class="temp" id="weatherTemp">—</span><span id="weatherLabel">Loading…</span></span>
       </div>
+      <div class="cloud-status connecting" id="cloudStatus" title="Sync status">☁️ Connecting…</div>
     </div>
   </div>
 </header>
@@ -1359,27 +1378,7 @@
     <h2 class="section-title">Schedule</h2>
     <p class="section-sub">Round-robin pool play across <strong id="schedCourtsLabel">2</strong> nets starting at <strong id="schedStartLabel">11:00 AM</strong>. Enter the final score of each match — standings & playoffs update automatically.</p>
 
-    <div class="card" style="margin-bottom:18px">
-      <h3 class="card-title">⚙️ Schedule Settings</h3>
-      <div class="form-row">
-        <div>
-          <label>🕚 Start Time</label>
-          <input type="time" id="schedStartTime">
-        </div>
-        <div>
-          <label>🏐 Courts / Nets</label>
-          <input type="number" inputmode="numeric" pattern="[0-9]*" id="schedNumCourts" min="1" max="8">
-        </div>
-        <div>
-          <label>⏱ Minutes / Match</label>
-          <input type="number" inputmode="numeric" pattern="[0-9]*" id="schedMatchMins" min="10" max="180" step="5">
-        </div>
-      </div>
-      <p class="muted" style="margin-top:8px;font-size:12px">Changing start time or match length re-labels existing times. Changing court count requires regenerating the schedule.</p>
-    </div>
-
     <div class="row" style="margin-bottom:18px">
-      <button class="btn primary" onclick="generateSchedule()">🔄 Generate / Reset Schedule</button>
       <span class="muted" id="scheduleSummary"></span>
     </div>
     <div id="scheduleList"></div>
@@ -1427,6 +1426,29 @@
         <div class="row">
           <button class="btn primary" onclick="switchTab('generator')">🎲 Open Team Generator</button>
           <button class="btn ghost" onclick="switchTab('teams')">👥 View Current Teams</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h3 class="card-title">📅 Schedule Settings</h3>
+        <div class="form-row">
+          <div>
+            <label>🕚 Start Time</label>
+            <input type="time" id="schedStartTime">
+          </div>
+          <div>
+            <label>🏐 Courts / Nets</label>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" id="schedNumCourts" min="1" max="8">
+          </div>
+          <div>
+            <label>⏱ Minutes / Match</label>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" id="schedMatchMins" min="10" max="180" step="5">
+          </div>
+        </div>
+        <p class="muted" style="margin-top:8px;font-size:12px">Changing start time or match length re-labels existing times. Changing court count requires regenerating the schedule.</p>
+        <div class="row" style="margin-top:12px">
+          <button class="btn primary" onclick="generateSchedule()">🔄 Generate / Reset Schedule</button>
+          <button class="btn ghost" onclick="switchTab('schedule')">📋 View Schedule</button>
         </div>
       </div>
 
@@ -1544,6 +1566,10 @@
     </div>
   </div>
 </div>
+
+<!-- Firebase compat SDK (must load before the main script) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 
 <script>
 /* =========================================================
@@ -1679,6 +1705,7 @@ function load() {
 }
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (cloudEnabled && !receivingRemote) scheduleCloudWrite();
 }
 
 /* =========================================================
@@ -2831,6 +2858,120 @@ fetchWeather();
 
 // Refresh weather every 30 min
 setInterval(fetchWeather, 30 * 60 * 1000);
+
+/* =========================================================
+   ☁️ CLOUD SYNC — Firebase Firestore
+========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDqPWZSbnebSQeaj6UT39dSsfYDaggJpjQ",
+  authDomain: "burger-bash-12b19.firebaseapp.com",
+  projectId: "burger-bash-12b19",
+  storageBucket: "burger-bash-12b19.firebasestorage.app",
+  messagingSenderId: "1071184754315",
+  appId: "1:1071184754315:web:5e7970385884ac9883c68e"
+};
+
+let cloudStateRef = null;
+let cloudEnabled = false;
+let receivingRemote = false;
+let cloudWriteTimer = null;
+
+function setCloudStatus(status) {
+  const el = document.getElementById('cloudStatus');
+  if (!el) return;
+  el.className = 'cloud-status ' + status;
+  const labels = {
+    connecting: '☁️ Connecting…',
+    synced: '☁️ Synced',
+    offline: '⚠️ Offline',
+    disabled: '🔌 Local'
+  };
+  el.textContent = labels[status] || status;
+}
+
+function scheduleCloudWrite() {
+  if (cloudWriteTimer) clearTimeout(cloudWriteTimer);
+  cloudWriteTimer = setTimeout(syncToCloud, 400);
+}
+
+function syncToCloud() {
+  if (!cloudEnabled || !cloudStateRef) return;
+  // Strip device-local admin password before serializing
+  const safe = JSON.parse(JSON.stringify(state));
+  if (safe.settings) delete safe.settings.adminPassword;
+  // Store the whole state as a single JSON string — Firestore doesn't support nested arrays
+  cloudStateRef.set({
+    json: JSON.stringify(safe),
+    updatedAt: Date.now()
+  })
+    .then(() => setCloudStatus('synced'))
+    .catch(err => {
+      console.warn('[Cloud] write failed:', err);
+      setCloudStatus('offline');
+    });
+}
+
+function applyRemoteState(remote) {
+  const oldLocation = state.settings && state.settings.location;
+  const localPwd = state.settings && state.settings.adminPassword;
+  state.teams = remote.teams || [];
+  state.matches = remote.matches || [];
+  state.playoffs = Object.assign({ size: 4, bracket: [] }, remote.playoffs || {});
+  state.roster = remote.roster !== undefined ? remote.roster : DEFAULT_ROSTER;
+  state.alternates = remote.alternates !== undefined ? remote.alternates : DEFAULT_ALTERNATES;
+  state.girls = remote.girls !== undefined ? remote.girls : DEFAULT_GIRLS;
+  state.settings = Object.assign({}, DEFAULT_SETTINGS, remote.settings || {});
+  state.settings.adminPassword = localPwd || DEFAULT_SETTINGS.adminPassword;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (playersInput) playersInput.value = state.roster || '';
+  if (altInput) altInput.value = state.alternates || '';
+  updatePlayerCount();
+  renderAll();
+  if (state.settings.location !== oldLocation) fetchWeather();
+}
+
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    cloudStateRef = firebase.firestore().collection('tournament').doc('main');
+    cloudEnabled = true;
+    setCloudStatus('connecting');
+    cloudStateRef.onSnapshot(
+      snap => {
+        if (!snap.exists || !snap.data() || !snap.data().json) {
+          syncToCloud();
+          return;
+        }
+        if (snap.metadata.hasPendingWrites) return;
+        let remote;
+        try {
+          remote = JSON.parse(snap.data().json);
+        } catch (e) {
+          console.warn('[Cloud] failed to parse remote state:', e);
+          setCloudStatus('offline');
+          return;
+        }
+        const cleanLocal = JSON.parse(JSON.stringify(state));
+        if (cleanLocal.settings) delete cleanLocal.settings.adminPassword;
+        if (JSON.stringify(remote) !== JSON.stringify(cleanLocal)) {
+          receivingRemote = true;
+          applyRemoteState(remote);
+          setTimeout(() => { receivingRemote = false; }, 100);
+        }
+        setCloudStatus('synced');
+      },
+      err => {
+        console.warn('[Cloud] snapshot error:', err);
+        setCloudStatus('offline');
+      }
+    );
+  } else {
+    setCloudStatus('disabled');
+  }
+} catch (e) {
+  console.warn('[Cloud] init failed:', e);
+  setCloudStatus('disabled');
+}
 </script>
 </body>
 </html>
