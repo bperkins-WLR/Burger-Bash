@@ -1626,10 +1626,82 @@ const TEAM_COLORS = [
   '#D35400', '#27AE60', '#2C3E50', '#C0392B', '#7F8C8D', '#F1C40F'
 ];
 
+// 🍑 Volleyball-themed dirty team names — pre-crafted punchlines
+const DIRTY_NAMES = [
+  'Ball Busters',
+  'Just the Tip',
+  "I'd Hit That",
+  'Block Party',
+  'Set It and Forget It',
+  'Sweaty Setters',
+  'Bump and Grind',
+  'Notorious D.I.G.',
+  'Hit It and Quit It',
+  'Free Balls',
+  'Slappers Only',
+  'Beach Bums',
+  'Setters Gonna Set',
+  'Sloppy Sets',
+  'Tap That',
+  'Dirty Diggers',
+  'Sandy Cheeks',
+  'Spike Hard',
+  'Wet Setters',
+  'Hit From Behind',
+  'Wieners & Losers',
+  'Two Hands Required',
+  "Bumpin' Uglies",
+  'Backdoor Spikers',
+  'Net Crashers',
+  'Six Pack Setters',
+  'Greasy Spikers',
+  'Hung Like a Net',
+  'Triple Hump',
+  'Tight Sets, Loose Wrists',
+  'All Hands on Deck',
+  "Bumpin' Buns",
+  'Tossed Salads',
+  'Sandbaggers',
+  'Beach Body Beefcakes',
+  'Saucy Sliders',
+  'Stuffed Buns',
+  'Whoever Smelt It Spiked It',
+  "Slip n' Spike",
+  'Dirty Burger Boys',
+  'Cheeky Spikers',
+  'Smashing Patties',
+  'Aces & Asses',
+  'Buns of Steel',
+  'Juicy Bumpers',
+  'Hot Box Hitters',
+  'Sweaty Buns',
+  'Two Inches Off the Net',
+  'Bump Set Spank',
+  'Sandy Bottoms',
+  'Hard Sets, Soft Lands',
+  'Triple Stuffed',
+  'Big Bump Energy',
+  'Hand It Over',
+  "Bumpin' Body Bash",
+  'Sticky Setters',
+  'Block Me Harder',
+  'Net Naughty',
+  'Sweet Sets of Mine',
+  'Spike Lee Genitals',
+  'Pump Set Spike',
+  'Side Out Side Hustle',
+  'Diggin\' Deep',
+  'Burger Buns of Fury',
+  'Saucy Spikers',
+  'Hands Where I Can See Em',
+  'Wide Receivers',
+  'Hot & Hung'
+];
+
+// Adjective + noun combinations for variety
 const NAME_PARTS = {
-  adj: ['Sizzling','Flaming','Smoky','Greasy','Juicy','Crispy','Spicy','Cheesy','Saucy','Loaded','Stacked','Beefy','Toasted','Charred','Grilled','Smashed','Mighty','Wild','Sandy','Sunset','Hangry','Triple','Double','Seared','Marinated','Wicked','Salty','Crusty','Smashing','Roasted'],
-  noun: ['Patties','Burgers','Sliders','Whoppers','Beefcakes','Hamburglars','Cheeseheads','Pickles','Buns','Bacon','Onions','Tomatoes','Smashers','Spikers','Bumpers','Setters','Diggers','Aces','Blockers','Servers','Volleyers','Ralliers','Hammers','Sand Lords','Beach Bums','Net Crashers','Slammers','Hot Dogs','Combos','Big Macs'],
-  prefix: ['The','Team','Squad','Krew']
+  adj: ['Sweaty','Saucy','Greasy','Juicy','Sloppy','Hard','Tight','Loose','Wet','Spicy','Naughty','Cheeky','Filthy','Frisky','Stiff','Bouncy','Slippery','Steamy','Beefy','Hung','Smokin\'','Sticky','Throbbing','Bulging','Heaving','Plump','Thick','Meaty'],
+  noun: ['Spikers','Setters','Bumpers','Diggers','Slammers','Hitters','Bangers','Blockers','Servers','Pounders','Smashers','Tappers','Buns','Cheeks','Patties','Sliders','Burgers','Whoppers','Beefcakes','Knockers']
 };
 
 const DEFAULT_SETTINGS = {
@@ -1782,12 +1854,13 @@ function shuffle(arr) {
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function generateTeamName() {
+  // 65% pre-crafted dirty name, 35% randomized adj+noun combo for variety
+  if (Math.random() < 0.65) return pick(DIRTY_NAMES);
   const patterns = [
     () => `The ${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.noun)}`,
     () => `${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.noun)}`,
-    () => `${pick(NAME_PARTS.noun)} & ${pick(NAME_PARTS.noun)}`,
-    () => `Team ${pick(NAME_PARTS.adj)}`,
-    () => `${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.noun)}`
+    () => `${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.adj)} ${pick(NAME_PARTS.noun)}`,
+    () => `${pick(NAME_PARTS.noun)} & ${pick(NAME_PARTS.noun)}`
   ];
   return pick(patterns)();
 }
