@@ -710,6 +710,32 @@
   }
   .pool-card .standings-table { box-shadow: none; border: 1px solid var(--gray-200); }
   .pool-card .standings-table th { background: var(--navy); }
+
+  /* Match rows inside a pool card use the stacked layout regardless of viewport
+     (the pool column is too narrow for the wide 7-column desktop layout) */
+  .pool-card .match-row {
+    grid-template-columns: 60px 1fr 1fr;
+    grid-template-areas:
+      "court team1 team2"
+      "court sets1 sets2"
+      "status status status";
+    gap: 8px;
+    padding: 12px;
+  }
+  .pool-card .match-row .court-tag { grid-area: court; align-self: stretch; display: flex; align-items: center; justify-content: center; font-size: 11px; padding: 0; }
+  .pool-card .match-row .match-team:first-of-type { grid-area: team1; justify-content: flex-start; }
+  .pool-card .match-row .match-team:last-of-type { grid-area: team2; justify-content: flex-end; text-align: right; }
+  .pool-card .match-row .sets-input:first-of-type { grid-area: sets1; }
+  .pool-card .match-row .sets-input:last-of-type { grid-area: sets2; }
+  .pool-card .match-row .vs { display: none; }
+  .pool-card .match-row .match-status { grid-area: status; text-align: center; padding-top: 4px; border-top: 1px dashed var(--gray-200); display: block; font-size: 11px; }
+  .pool-card .match-row .set-input { font-size: 22px; padding: 8px 0; }
+  .pool-card .match-row .match-team .name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.15;
+  }
   .court-tag {
     background: var(--navy);
     color: white;
@@ -1338,7 +1364,7 @@
   <!-- ============ TEAMS ============ -->
   <section class="panel" id="panel-teams">
     <h2 class="section-title">Teams</h2>
-    <p class="section-sub">Round-robin pool play — every team plays every other team once, then top seeds advance to playoffs. <strong>Click any player to move them to a different team</strong> if you want to rebalance.</p>
+    <p class="section-sub">Two pools — round-robin within each pool, then <strong>all teams advance to the playoff bracket</strong>. <strong>Click any player to move them to a different team</strong> if you want to rebalance.</p>
     <div id="teamsGrid" class="teams-grid"></div>
     <div id="teamsEmpty" class="empty-state hidden">
       <div class="ic">🍔</div>
