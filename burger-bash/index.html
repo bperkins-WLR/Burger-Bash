@@ -644,6 +644,177 @@
     font-weight: 500;
   }
 
+  /* ---------- MANUAL DRAFT (Jake's mode) ---------- */
+  .draft-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(180deg, #FFF8EE 0%, #FFF 100%);
+    border: 2px dashed var(--orange-light);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    min-height: 80px;
+  }
+  .draft-pool-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--orange-deep);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .draft-chip {
+    background: white;
+    border: 2px solid var(--gray-300);
+    color: var(--navy);
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.2;
+  }
+  .draft-chip:hover { border-color: var(--orange); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .draft-chip.girl {
+    background: linear-gradient(135deg, #FFF4E0 0%, #FFE9CC 100%);
+    border-color: #F5D790;
+    color: #8A5A00;
+  }
+  .draft-chip.selected {
+    background: var(--orange);
+    color: white;
+    border-color: var(--orange-deep);
+    box-shadow: 0 0 0 4px rgba(255,90,10,0.3);
+    transform: scale(1.05);
+  }
+  .draft-chip.selected.girl {
+    background: linear-gradient(135deg, #FF8A3D 0%, #C44100 100%);
+    color: white;
+    border-color: #8A2400;
+  }
+  .draft-chip.in-team {
+    background: white;
+    border-color: var(--gray-200);
+  }
+  .draft-chip.in-team::after { content: ' ✕'; opacity: 0.5; font-size: 11px; }
+  .draft-chip.in-team:hover::after { opacity: 1; color: var(--red); }
+
+  .draft-teams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 700px) { .draft-teams { grid-template-columns: 1fr; } }
+  .draft-team {
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-left: 6px solid var(--gray-300);
+    border-radius: var(--radius);
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .draft-team:hover {
+    background: #FFFBF5;
+    border-color: var(--orange-light);
+    box-shadow: var(--shadow-md);
+  }
+  .draft-team.has-selection {
+    background: #FFF4E0;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(255,90,10,0.15);
+  }
+  .draft-team.full { background: #E8F8EE; border-left-color: var(--green); }
+  .draft-team-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .draft-team-pool {
+    background: var(--navy);
+    color: white;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 1.5px;
+  }
+  .draft-team-pool.b { background: #0E5C9C; }
+  .draft-team-name {
+    flex: 1;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: transparent;
+    letter-spacing: 0.5px;
+    min-width: 100px;
+    color: var(--navy);
+  }
+  .draft-team-name:hover { border-color: var(--gray-300); background: white; }
+  .draft-team-name:focus { border-color: var(--orange); background: white; outline: none; }
+  .draft-team-meta {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-500);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .draft-team-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px;
+    background: var(--gray-100);
+    border-radius: 6px;
+  }
+  .draft-team-players .empty-hint {
+    font-size: 12px;
+    color: var(--gray-500);
+    font-style: italic;
+    padding: 6px;
+  }
+  .draft-progress {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 999px;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .draft-progress .pct-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .draft-progress .pct-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange) 0%, var(--orange-deep) 100%);
+    transition: width 0.3s ease;
+  }
+  .draft-progress .pct-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--navy);
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
   /* ---------- SCHEDULE / MATCHES ---------- */
   .round-section { margin-bottom: 28px; }
   .round-title {
@@ -1420,13 +1591,15 @@
             </div>
           </div>
           <div style="margin-top:14px">
-            <button class="btn primary lg" onclick="generateTeams()" style="width:100%">🎲 Shuffle & Generate Teams</button>
+            <button class="btn primary lg" onclick="startManualDraft()" style="width:100%">👆 Draft Teams Manually</button>
+            <div style="text-align:center;margin:10px 0 8px;font-size:11px;color:var(--gray-500);font-weight:800;letter-spacing:1.5px">— OR —</div>
+            <button class="btn ghost" onclick="generateTeams()" style="width:100%">🎲 Auto-Shuffle Random Teams</button>
           </div>
         </div>
 
         <div class="card">
           <h3 class="card-title">3. Save</h3>
-          <p class="muted" style="margin-bottom:12px">Replace existing teams with these generated ones. Match scores will reset.</p>
+          <p class="muted" style="margin-bottom:12px">Replace existing teams with these. Match scores will reset.</p>
           <button class="btn secondary" onclick="commitGeneratedTeams()" id="commitBtn" disabled>💾 Save These Teams</button>
         </div>
       </div>
@@ -2043,6 +2216,8 @@ function generateTeams() {
     t.name = name;
   });
   pendingGenerated = teams;
+  draftMode = false;
+  selectedPlayerName = null;
   document.getElementById('commitBtn').disabled = false;
   renderGeneratorResult();
   if (girls.length >= n) {
@@ -2058,13 +2233,137 @@ function regenerateName(teamId) {
   renderGeneratorResult();
 }
 
+/* ---------- MANUAL DRAFT MODE ---------- */
+let draftMode = false;
+let selectedPlayerName = null;
+
+function startManualDraft() {
+  const players = playersInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+  const n = Math.max(2, Math.min(32, parseInt(numTeamsInput.value) || 2));
+  if (players.length < n) {
+    showToast(`Need at least ${n} players for ${n} teams`, 'error');
+    return;
+  }
+  const halfTeams = Math.ceil(n / 2);
+  const usedNames = new Set();
+  pendingGenerated = [];
+  for (let i = 0; i < n; i++) {
+    let name;
+    let tries = 0;
+    do { name = generateTeamName(); tries++; } while (usedNames.has(name) && tries < 50);
+    usedNames.add(name);
+    pendingGenerated.push({
+      id: uid(),
+      name,
+      players: [],
+      color: TEAM_COLORS[i % TEAM_COLORS.length],
+      pool: i < halfTeams ? 'A' : 'B'
+    });
+  }
+  draftMode = true;
+  selectedPlayerName = null;
+  document.getElementById('commitBtn').disabled = false;
+  renderGeneratorResult();
+  showToast('🎯 Draft mode: tap a player, then tap a team', 'success');
+}
+
+function selectPlayerForDraft(name) {
+  selectedPlayerName = selectedPlayerName === name ? null : name;
+  renderGeneratorResult();
+}
+
+function placePlayerOnTeam(teamId) {
+  if (!selectedPlayerName) {
+    showToast('Tap a player first', 'error');
+    return;
+  }
+  const team = pendingGenerated.find(t => t.id === teamId);
+  if (!team) return;
+  // Remove the player from any team they might already be in (shouldn't happen, but safe)
+  pendingGenerated.forEach(t => { t.players = t.players.filter(p => p !== selectedPlayerName); });
+  team.players.push(selectedPlayerName);
+  selectedPlayerName = null;
+  renderGeneratorResult();
+}
+
+function unassignDraftPlayer(teamId, name) {
+  const team = pendingGenerated.find(t => t.id === teamId);
+  if (!team) return;
+  team.players = team.players.filter(p => p !== name);
+  renderGeneratorResult();
+}
+
+function renameDraftTeam(teamId, newName) {
+  const team = pendingGenerated.find(t => t.id === teamId);
+  if (!team) return;
+  team.name = newName.trim() || team.name;
+}
+
+function getUnassignedPlayers() {
+  const all = playersInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+  const assigned = new Set((pendingGenerated || []).flatMap(t => t.players));
+  return all.filter(p => !assigned.has(p));
+}
+
 function renderGeneratorResult() {
   const el = document.getElementById('genResult');
   if (!pendingGenerated || !pendingGenerated.length) {
-    el.innerHTML = `<div class="empty-state"><div class="ic">🎲</div><p>Enter your players on the left, choose how many teams, and hit Generate.</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="ic">🎯</div><p>Enter your players, choose how many teams, then tap <strong>Draft Teams Manually</strong> or <strong>Auto-Shuffle</strong>.</p></div>`;
     return;
   }
   const girlsSet = getGirlsSet();
+  if (draftMode) {
+    const unassigned = getUnassignedPlayers();
+    const total = unassigned.length + pendingGenerated.reduce((s, t) => s + t.players.length, 0);
+    const placed = total - unassigned.length;
+    const pct = total ? Math.round((placed / total) * 100) : 0;
+    el.innerHTML = `
+      <h3 class="card-title" style="margin-bottom:10px">Draft Teams <span class="badge">${unassigned.length} UNASSIGNED</span></h3>
+      <p class="muted" style="margin-bottom:12px;font-size:13px">Tap a player chip, then tap a team to place them. Tap a player on a team to send them back. Edit team names inline or hit 🔁 to re-roll.</p>
+      <div class="draft-progress">
+        <span class="pct-text">${placed}/${total}</span>
+        <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
+        <span class="pct-text" style="font-size:14px;color:var(--gray-500)">${pct}%</span>
+      </div>
+      ${unassigned.length ? `
+        <div class="draft-pool-label">🎯 Unassigned · tap one to select</div>
+        <div class="draft-pool">
+          ${unassigned.map(p => {
+            const isGirl = girlsSet.has(p.toLowerCase());
+            const selected = p === selectedPlayerName;
+            return `<button class="draft-chip ${isGirl ? 'girl' : ''} ${selected ? 'selected' : ''}" data-player="${escapeHtml(p)}" onclick="selectPlayerForDraft(this.dataset.player)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
+          }).join('')}
+        </div>
+      ` : `<div class="balance-ok" style="margin-bottom:14px">✓ All players assigned. Review teams, then hit <strong>Save These Teams</strong>.</div>`}
+      <div class="draft-teams">
+        ${pendingGenerated.map(t => {
+          const girlCount = t.players.filter(p => girlsSet.has(p.toLowerCase())).length;
+          const guyCount = t.players.length - girlCount;
+          const full = t.players.length >= 4;
+          const hasSelection = !!selectedPlayerName;
+          return `
+            <div class="draft-team ${full ? 'full' : ''} ${hasSelection ? 'has-selection' : ''}" style="border-left-color:${t.color}" data-team="${t.id}" onclick="placePlayerOnTeam(this.dataset.team)">
+              <div class="draft-team-head" onclick="event.stopPropagation()">
+                <span class="draft-team-pool ${t.pool === 'B' ? 'b' : ''}">POOL ${t.pool}</span>
+                <input class="draft-team-name" value="${escapeHtml(t.name)}" data-team="${t.id}" onclick="event.stopPropagation()" onchange="renameDraftTeam(this.dataset.team, this.value)">
+                <button class="btn ghost sm" data-team="${t.id}" onclick="event.stopPropagation(); regenerateName(this.dataset.team)" type="button">🔁</button>
+                <span class="draft-team-meta">${t.players.length}p · ${girlCount}♀ ${guyCount}♂</span>
+              </div>
+              <div class="draft-team-players" onclick="event.stopPropagation()">
+                ${t.players.length === 0
+                  ? '<span class="empty-hint">empty — tap team area to place selected player</span>'
+                  : t.players.map(p => {
+                      const isGirl = girlsSet.has(p.toLowerCase());
+                      return `<button class="draft-chip in-team ${isGirl ? 'girl' : ''}" data-team="${t.id}" data-player="${escapeHtml(p)}" onclick="event.stopPropagation(); unassignDraftPlayer(this.dataset.team, this.dataset.player)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
+                    }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    return;
+  }
   el.innerHTML = `
     <h3 class="card-title" style="margin-bottom:16px">${pendingGenerated.length} Teams Ready <span class="badge">PREVIEW</span></h3>
     ${pendingGenerated.map(t => {
@@ -2093,19 +2392,32 @@ function renderGeneratorResult() {
 
 function commitGeneratedTeams() {
   if (!pendingGenerated || !pendingGenerated.length) return;
+  const totalPlayers = playersInput.value.split('\n').map(s => s.trim()).filter(Boolean).length;
+  const assigned = pendingGenerated.reduce((s, t) => s + t.players.length, 0);
+  const proceed = () => {
+    state.teams = pendingGenerated.map(t => ({ ...t }));
+    state.matches = [];
+    state.playoffs.bracket = [];
+    save();
+    pendingGenerated = null;
+    draftMode = false;
+    selectedPlayerName = null;
+    document.getElementById('commitBtn').disabled = true;
+    showToast('🍔 Teams saved! Generate the schedule next.', 'success');
+    switchTab('teams');
+  };
+  if (draftMode && assigned < totalPlayers) {
+    confirmAction(
+      `${totalPlayers - assigned} player${totalPlayers - assigned === 1 ? '' : 's'} unassigned`,
+      `${assigned}/${totalPlayers} players placed. Save anyway? Unassigned players won't be on any team.`,
+      proceed
+    );
+    return;
+  }
   confirmAction(
     'Replace existing teams?',
     'This will replace the current teams and reset all match scores.',
-    () => {
-      state.teams = pendingGenerated.map(t => ({ ...t }));
-      state.matches = [];
-      state.playoffs.bracket = [];
-      save();
-      pendingGenerated = null;
-      document.getElementById('commitBtn').disabled = true;
-      showToast('🍔 Teams saved! Generate the schedule next.', 'success');
-      switchTab('teams');
-    }
+    proceed
   );
 }
 
