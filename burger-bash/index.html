@@ -644,6 +644,22 @@
     font-weight: 500;
   }
 
+  /* ---------- MANUAL DRAFT — DRAG & DROP ---------- */
+  .ghost-chip {
+    opacity: 0.95;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    transform: translate(-50%, -50%) scale(1.12) rotate(-4deg) !important;
+    pointer-events: none;
+  }
+  body.dragging-active { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+  body.dragging-active * { cursor: grabbing !important; }
+  .drop-target {
+    background: #FFF4E0 !important;
+    border-color: var(--orange) !important;
+    box-shadow: 0 0 0 4px rgba(255,90,10,0.28) !important;
+    transform: translateY(-1px);
+  }
+
   /* ---------- MANUAL DRAFT (Jake's mode) ---------- */
   .draft-pool {
     display: flex;
@@ -672,14 +688,18 @@
     font-size: 14px;
     font-weight: 600;
     border-radius: 999px;
-    cursor: pointer;
-    transition: all 0.12s ease;
+    cursor: grab;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
     font-family: 'Inter', sans-serif;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     line-height: 1.2;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
+  .draft-chip:active { cursor: grabbing; }
   .draft-chip:hover { border-color: var(--orange); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .draft-chip.girl {
     background: linear-gradient(135deg, #FFF4E0 0%, #FFE9CC 100%);
@@ -2305,6 +2325,104 @@ function getUnassignedPlayers() {
   return all.filter(p => !assigned.has(p));
 }
 
+/* ---------- DRAG & DROP (works on touch + mouse via Pointer Events) ---------- */
+let dragState = null;
+const DRAG_THRESHOLD = 5; // px before a tap becomes a drag
+
+function onChipPointerDown(e) {
+  // Only left/primary button on mouse
+  if (e.button != null && e.button !== 0) return;
+  const chip = e.currentTarget;
+  dragState = {
+    player: chip.dataset.player,
+    fromTeamId: chip.dataset.fromTeam || null,
+    startX: e.clientX,
+    startY: e.clientY,
+    chip,
+    ghost: null,
+    active: false,
+    pointerId: e.pointerId
+  };
+  try { chip.setPointerCapture(e.pointerId); } catch (_) {}
+}
+
+function onDragMove(e) {
+  if (!dragState) return;
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+  if (!dragState.active) {
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    // Activate drag
+    dragState.active = true;
+    const ghost = dragState.chip.cloneNode(true);
+    ghost.classList.add('ghost-chip');
+    ghost.style.position = 'fixed';
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '9999';
+    document.body.appendChild(ghost);
+    dragState.ghost = ghost;
+    dragState.chip.style.opacity = '0.25';
+    document.body.classList.add('dragging-active');
+  }
+  // Position ghost at pointer
+  dragState.ghost.style.left = e.clientX + 'px';
+  dragState.ghost.style.top = e.clientY + 'px';
+  // Highlight drop target — hide ghost while hit-testing so it doesn't capture
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  dragState.ghost.style.visibility = 'hidden';
+  const elBelow = document.elementFromPoint(e.clientX, e.clientY);
+  dragState.ghost.style.visibility = '';
+  if (!elBelow) return;
+  const team = elBelow.closest('.draft-team');
+  const pool = elBelow.closest('.draft-pool');
+  if (team) team.classList.add('drop-target');
+  else if (pool && dragState.fromTeamId) pool.classList.add('drop-target');
+}
+
+function onDragEnd(e) {
+  if (!dragState) return;
+  const s = dragState;
+  dragState = null;
+  // Clean up visuals
+  if (s.chip) s.chip.style.opacity = '';
+  if (s.ghost) s.ghost.remove();
+  document.body.classList.remove('dragging-active');
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+  if (!s.active) {
+    // It was just a tap → use tap-to-select / unassign behavior as fallback
+    if (s.fromTeamId) {
+      unassignDraftPlayer(s.fromTeamId, s.player);
+    } else {
+      selectPlayerForDraft(s.player);
+    }
+    return;
+  }
+  // It was a drag — handle the drop (ghost is already removed, no hit-test interference)
+  const elBelow = document.elementFromPoint(e.clientX, e.clientY);
+  if (!elBelow) return;
+  const teamEl = elBelow.closest('.draft-team');
+  const poolEl = elBelow.closest('.draft-pool');
+  if (teamEl) {
+    const teamId = teamEl.dataset.team;
+    if (s.fromTeamId) {
+      const from = pendingGenerated.find(t => t.id === s.fromTeamId);
+      if (from) from.players = from.players.filter(p => p !== s.player);
+    }
+    const to = pendingGenerated.find(t => t.id === teamId);
+    if (to && !to.players.includes(s.player)) to.players.push(s.player);
+    renderGeneratorResult();
+  } else if (poolEl && s.fromTeamId) {
+    const from = pendingGenerated.find(t => t.id === s.fromTeamId);
+    if (from) from.players = from.players.filter(p => p !== s.player);
+    renderGeneratorResult();
+  }
+  // Dropped elsewhere: no-op (stays put)
+}
+
+document.addEventListener('pointermove', onDragMove);
+document.addEventListener('pointerup', onDragEnd);
+document.addEventListener('pointercancel', onDragEnd);
+
 function renderGeneratorResult() {
   const el = document.getElementById('genResult');
   if (!pendingGenerated || !pendingGenerated.length) {
@@ -2319,7 +2437,7 @@ function renderGeneratorResult() {
     const pct = total ? Math.round((placed / total) * 100) : 0;
     el.innerHTML = `
       <h3 class="card-title" style="margin-bottom:10px">Draft Teams <span class="badge">${unassigned.length} UNASSIGNED</span></h3>
-      <p class="muted" style="margin-bottom:12px;font-size:13px">Tap a player chip, then tap a team to place them. Tap a player on a team to send them back. Edit team names inline or hit 🔁 to re-roll.</p>
+      <p class="muted" style="margin-bottom:12px;font-size:13px"><strong>Drag</strong> a player chip onto a team to place them. Drag from a team back to the pool to remove. (Quick-tap also works: tap a player, then tap a team.) Edit team names inline or hit 🔁 to re-roll.</p>
       <div class="draft-progress">
         <span class="pct-text">${placed}/${total}</span>
         <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
@@ -2331,7 +2449,7 @@ function renderGeneratorResult() {
           ${unassigned.map(p => {
             const isGirl = girlsSet.has(p.toLowerCase());
             const selected = p === selectedPlayerName;
-            return `<button class="draft-chip ${isGirl ? 'girl' : ''} ${selected ? 'selected' : ''}" data-player="${escapeHtml(p)}" onclick="selectPlayerForDraft(this.dataset.player)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
+            return `<button class="draft-chip ${isGirl ? 'girl' : ''} ${selected ? 'selected' : ''}" data-player="${escapeHtml(p)}" onpointerdown="onChipPointerDown(event)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
           }).join('')}
         </div>
       ` : `<div class="balance-ok" style="margin-bottom:14px">✓ All players assigned. Review teams, then hit <strong>Save These Teams</strong>.</div>`}
@@ -2354,7 +2472,7 @@ function renderGeneratorResult() {
                   ? '<span class="empty-hint">empty — tap team area to place selected player</span>'
                   : t.players.map(p => {
                       const isGirl = girlsSet.has(p.toLowerCase());
-                      return `<button class="draft-chip in-team ${isGirl ? 'girl' : ''}" data-team="${t.id}" data-player="${escapeHtml(p)}" onclick="event.stopPropagation(); unassignDraftPlayer(this.dataset.team, this.dataset.player)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
+                      return `<button class="draft-chip in-team ${isGirl ? 'girl' : ''}" data-from-team="${t.id}" data-player="${escapeHtml(p)}" onpointerdown="event.stopPropagation(); onChipPointerDown(event)" type="button">${isGirl ? '♀ ' : ''}${escapeHtml(p)}</button>`;
                     }).join('')}
               </div>
             </div>
