@@ -732,6 +732,54 @@
     word-break: break-all;
   }
 
+  /* iPhone "Add to Home Screen" collapsible */
+  .ios-install {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .ios-install summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    color: var(--navy);
+    transition: background 0.15s ease;
+    user-select: none;
+  }
+  .ios-install summary::-webkit-details-marker { display: none; }
+  .ios-install summary::marker { content: ''; }
+  .ios-install summary:hover { background: var(--gray-100); }
+  .ios-install-icon { font-size: 24px; line-height: 1; }
+  .ios-install-chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    color: var(--gray-500);
+  }
+  .ios-install[open] .ios-install-chevron { transform: rotate(180deg); }
+  .ios-install-body {
+    padding: 4px 20px 20px;
+    border-top: 1px solid var(--gray-200);
+  }
+  .ios-install-steps {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--gray-700);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+  .ios-install-steps li { margin-bottom: 10px; }
+  .ios-install-steps li::marker { color: var(--orange); font-weight: 700; }
+
   /* ---------- MANUAL DRAFT — DRAG & DROP ---------- */
   .ghost-chip {
     opacity: 0.95;
@@ -1614,18 +1662,6 @@
       </div>
     </div>
 
-    <div class="card share-card" style="margin-bottom:28px">
-      <h3 class="card-title">📱 Scan to Join</h3>
-      <div class="share-grid">
-        <div class="qr-wrap" id="qrCode"></div>
-        <div class="share-info">
-          <p class="muted" style="font-size:13px">Have anyone point their phone camera at this QR code to load the live app on their device.</p>
-          <p class="share-url" id="shareUrl">burger-bash.vercel.app</p>
-          <button class="btn ghost sm" onclick="copyShareLink()">📋 Copy Link</button>
-        </div>
-      </div>
-    </div>
-
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">Matches Played</div>
@@ -1649,6 +1685,36 @@
         <div id="recentResults"></div>
       </div>
     </div>
+
+    <div class="card share-card" style="margin-bottom:14px">
+      <h3 class="card-title">📱 Scan to Join</h3>
+      <div class="share-grid">
+        <div class="qr-wrap" id="qrCode"></div>
+        <div class="share-info">
+          <p class="muted" style="font-size:13px">Have anyone point their phone camera at this QR code to load the live app on their device.</p>
+          <p class="share-url" id="shareUrl">burger-bash.vercel.app</p>
+          <button class="btn ghost sm" onclick="copyShareLink()">📋 Copy Link</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="ios-install">
+      <summary>
+        <span class="ios-install-icon">📲</span>
+        <span>Add Burger Bash to your iPhone home screen</span>
+        <span class="ios-install-chevron">▾</span>
+      </summary>
+      <div class="ios-install-body">
+        <p class="muted" style="font-size:13px;margin-bottom:12px">Get the app icon on your home screen so it opens fullscreen — no Safari toolbars, faster launch.</p>
+        <ol class="ios-install-steps">
+          <li>Open this page in <strong>Safari</strong> on your iPhone (Add to Home Screen only works in Safari — not Chrome).</li>
+          <li>Tap the <strong>Share button</strong> 􀈂 at the bottom of the screen (square with an arrow pointing up).</li>
+          <li>Scroll down in the share sheet and tap <strong>"Add to Home Screen"</strong>.</li>
+          <li>Tap <strong>Add</strong> in the top-right corner.</li>
+          <li>The Burger Bash icon will appear on your home screen — tap it any time to open fullscreen.</li>
+        </ol>
+      </div>
+    </details>
 
   </section>
 
