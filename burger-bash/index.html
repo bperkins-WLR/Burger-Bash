@@ -774,6 +774,235 @@
     }
   }
 
+  /* ============================================
+     🖨 PRINT STYLES
+     ============================================ */
+  @media print {
+    @page { margin: 0.5in; }
+    body { background: white !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Hide all interactive chrome */
+    .topbar, .tabs, footer, .toast-wrap, .modal-overlay,
+    .now-playing-card, .venue-card, .share-card, .ios-install,
+    .stats-grid, .dash-row, .hero, #appIntro,
+    .btn, .row, .form-row, .card-title .badge,
+    .pools-grid > .pool-card > .pool-header > span:nth-child(2) {
+      display: none !important;
+    }
+    .panel { display: none !important; }
+    body.print-schedule #panel-schedule { display: block !important; }
+    body.print-playoffs #panel-playoffs { display: block !important; }
+    .pool-card { break-inside: avoid; box-shadow: none !important; page-break-inside: avoid; }
+    .match-row { box-shadow: none !important; border: 1px solid #999 !important; break-inside: avoid; }
+    .bracket-match { box-shadow: none !important; border: 1.5px solid #333 !important; }
+    .bracket-svg path { stroke: #444 !important; stroke-opacity: 1 !important; }
+    .set-input, .scoreinput { border: 1px solid #333 !important; background: white !important; }
+    .standings-table { box-shadow: none !important; }
+    .pools-grid { grid-template-columns: 1fr 1fr !important; }
+    /* Print header banner */
+    body.print-schedule::before, body.print-playoffs::before {
+      display: block;
+      content: "🍔 BURGER BASH 2026";
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 2px;
+      color: #1A1D2E;
+      border-bottom: 3px solid #FF6B1A;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    body.print-schedule::after, body.print-playoffs::after {
+      display: block;
+      content: "Saturday, May 16, 2026 · 16826 Edward Doub Road, Williamsport MD · 11:00 AM";
+      font-size: 10px;
+      color: #666;
+      margin-top: 14px;
+      text-align: center;
+      border-top: 1px solid #ccc;
+      padding-top: 6px;
+    }
+  }
+
+  /* ============================================
+     🎮 COURT-SIDE REF MODE
+     ============================================ */
+  .ref-mode {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: linear-gradient(180deg, #1A1D2E 0%, #0F1322 100%);
+    color: white;
+    display: none;
+    flex-direction: column;
+    padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  }
+  body.ref-mode-active { overflow: hidden; }
+  body.ref-mode-active .topbar, body.ref-mode-active .tabs, body.ref-mode-active main, body.ref-mode-active footer { display: none !important; }
+  .ref-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+  }
+  .ref-court {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: white;
+  }
+  .ref-status {
+    background: var(--red);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    animation: liveTagPulse 1.5s ease-in-out infinite;
+  }
+  .ref-status.upcoming { background: var(--orange); animation: none; }
+  .ref-status.complete { background: var(--green); animation: none; }
+  .ref-exit {
+    margin-left: auto;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.85);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .ref-match {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px 0;
+    min-height: 0;
+  }
+  .ref-teams {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  .ref-team {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ref-team.winning { border-color: var(--orange); background: rgba(255,107,26,0.16); box-shadow: 0 0 0 3px rgba(255,107,26,0.25); }
+  .ref-team-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+    line-height: 1.05;
+    color: white;
+  }
+  .ref-team-pool {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+  .ref-set {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .ref-set-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.55);
+    width: 28px;
+    text-align: right;
+  }
+  .ref-set-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    color: white;
+    min-width: 56px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .ref-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .ref-btn:active { transform: scale(0.92); background: var(--orange); border-color: var(--orange); }
+  .ref-btn.minus { background: rgba(231,76,60,0.18); border-color: rgba(231,76,60,0.4); }
+  .ref-btn.minus:active { background: var(--red); }
+  .ref-vs {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: rgba(255,255,255,0.4);
+    align-self: center;
+    letter-spacing: 2px;
+  }
+  .ref-summary {
+    text-align: center;
+    margin-top: 24px;
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .ref-summary .winner-line {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--orange);
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+  .ref-next {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 14px;
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+    text-align: center;
+  }
+  .ref-next strong { color: white; font-weight: 700; }
+  .ref-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.5);
+  }
+  .ref-empty .ic { font-size: 48px; margin-bottom: 12px; }
+  @media (max-width: 600px) {
+    .ref-teams { grid-template-columns: 1fr; gap: 14px; }
+    .ref-vs { display: none; }
+    .ref-team { padding: 14px; gap: 12px; }
+    .ref-team-name { font-size: 22px; }
+    .ref-set-value { font-size: 48px; min-width: 56px; }
+    .ref-btn { width: 56px; height: 56px; font-size: 28px; }
+  }
+
   /* ---------- "NOW PLAYING" DASHBOARD WIDGET ---------- */
   .now-playing-card {
     background: linear-gradient(135deg, #FFF8EE 0%, #FFFFFF 100%);
@@ -1802,6 +2031,9 @@
 </head>
 <body>
 
+<!-- ===================== REF MODE (court-side score entry) ===================== -->
+<div class="ref-mode" id="refMode"></div>
+
 <!-- ===================== TOPBAR ===================== -->
 <header class="topbar">
   <div class="topbar-inner">
@@ -2163,6 +2395,17 @@
         <h3 class="card-title">📊 Edit Match Scores</h3>
         <p class="muted" style="margin-bottom:12px">Override or correct scores directly. Changes propagate to standings & bracket.</p>
         <div id="adminMatchesList"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 class="card-title">🖨 Print &amp; Ref Mode</h3>
+        <p class="muted" style="margin-bottom:12px;font-size:13px">Print physical copies of the schedule/bracket to post by the courts, or open court-side Ref Mode on a phone propped at each court for one-handed score entry.</p>
+        <div class="row">
+          <button class="btn ghost" onclick="printSchedule()">🖨 Print Schedule</button>
+          <button class="btn ghost" onclick="printBracket()">🖨 Print Bracket</button>
+          <button class="btn secondary" onclick="openRefLink(1)">🎮 Court 1 Ref Mode</button>
+          <button class="btn secondary" onclick="openRefLink(2)">🎮 Court 2 Ref Mode</button>
+        </div>
       </div>
 
       <div class="card" style="margin-top:16px">
@@ -2925,6 +3168,28 @@ function escapeHtml(s) {
   return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
 }
 
+/* ---------- ANIMATED NUMBER COUNTER ---------- */
+const ANIM_NUMBERS = new WeakMap();
+function animateNumber(el, target, duration = 450) {
+  if (!el) return;
+  target = parseInt(target);
+  if (isNaN(target)) { el.textContent = '0'; return; }
+  // Cancel any running animation on this element
+  const prev = ANIM_NUMBERS.get(el);
+  if (prev) cancelAnimationFrame(prev);
+  const start = parseInt((el.textContent || '0').replace(/[^0-9-]/g, '')) || 0;
+  if (start === target) { el.textContent = String(target); return; }
+  const startTime = performance.now();
+  function step(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    el.textContent = String(Math.round(start + (target - start) * eased));
+    if (t < 1) ANIM_NUMBERS.set(el, requestAnimationFrame(step));
+    else { ANIM_NUMBERS.delete(el); el.textContent = String(target); }
+  }
+  ANIM_NUMBERS.set(el, requestAnimationFrame(step));
+}
+
 /* =========================================================
    SCHEDULE
 ========================================================= */
@@ -3659,17 +3924,17 @@ function renderDashboard() {
   const leader = standings[0];
   const totalPlayers = state.teams.reduce((s, t) => s + (t.players || []).length, 0);
 
-  document.getElementById('heroTeams').textContent = state.teams.length;
-  document.getElementById('heroPlayers').textContent = totalPlayers;
-  document.getElementById('heroMatches').textContent = state.matches.length;
+  animateNumber(document.getElementById('heroTeams'), state.teams.length);
+  animateNumber(document.getElementById('heroPlayers'), totalPlayers);
+  animateNumber(document.getElementById('heroMatches'), state.matches.length);
   document.getElementById('heroDate').textContent = state.settings.dateText || 'Saturday, May 16, 2026';
 
   const statPlayedEl = document.getElementById('statPlayed');
-  if (statPlayedEl) statPlayedEl.textContent = played;
+  if (statPlayedEl) animateNumber(statPlayedEl, played);
   const statRemainingEl = document.getElementById('statRemaining');
   if (statRemainingEl) statRemainingEl.textContent = `${state.matches.length - played} remaining`;
   const statPointsEl = document.getElementById('statPoints');
-  if (statPointsEl) statPointsEl.textContent = totalPts;
+  if (statPointsEl) animateNumber(statPointsEl, totalPts);
   const statLeaderEl = document.getElementById('statLeader');
   const statLeaderRecordEl = document.getElementById('statLeaderRecord');
   if (leader && leader.gp > 0) {
@@ -4026,6 +4291,7 @@ renderAll();
 fetchWeather();
 renderQR();
 maybePlayIntro();
+checkRefMode();
 
 
 // Refresh weather every 30 min
@@ -4107,6 +4373,168 @@ function maybePlayIntro() {
   localStorage.setItem(INTRO_KEY, '1');
 }
 
+/* ---------- PRINT (schedule + bracket) ---------- */
+function printSchedule() {
+  document.body.classList.add('print-schedule');
+  setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('print-schedule'), 500); }, 100);
+}
+function printBracket() {
+  // Make sure the bracket renders before printing
+  switchTab('playoffs');
+  setTimeout(() => {
+    document.body.classList.add('print-playoffs');
+    drawBracketConnectors();
+    setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('print-playoffs'), 500); }, 200);
+  }, 100);
+}
+
+/* ---------- COURT-SIDE REF MODE ---------- */
+function openRefLink(court) {
+  const base = location.origin + location.pathname.replace(/\/$/, '');
+  const url = `${base}?ref=${court}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url);
+  }
+  window.open(url, '_blank');
+  showToast(`Court ${court} ref link opened & copied. Bookmark on the court phone.`, 'success');
+}
+
+function exitRefMode() {
+  document.body.classList.remove('ref-mode-active');
+  document.getElementById('refMode').style.display = 'none';
+  // Strip ?ref from URL without reloading
+  const u = new URL(location.href);
+  u.searchParams.delete('ref');
+  history.replaceState({}, '', u.toString());
+}
+
+function findRefMatch(court) {
+  const courtMatches = state.matches.filter(m => m.court === court).sort((a, b) => (a.timeSlot ?? 0) - (b.timeSlot ?? 0));
+  if (!courtMatches.length) return null;
+  // Live takes priority
+  const live = courtMatches.find(m => isLiveMatch(m));
+  if (live) return live;
+  // Otherwise: first incomplete match
+  const incomplete = courtMatches.find(m => !matchOutcome(m).complete);
+  if (incomplete) return incomplete;
+  // All matches done — return last one (champion view)
+  return courtMatches[courtMatches.length - 1];
+}
+
+function findNextRefMatch(court, afterMatch) {
+  const courtMatches = state.matches.filter(m => m.court === court).sort((a, b) => (a.timeSlot ?? 0) - (b.timeSlot ?? 0));
+  const idx = courtMatches.findIndex(m => m.id === afterMatch.id);
+  if (idx < 0) return null;
+  return courtMatches[idx + 1] || null;
+}
+
+function refIncSet(matchId, side, setNum, delta) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const key = `team${side}Set${setNum}`;
+  const current = m[key] != null ? m[key] : 0;
+  m[key] = Math.max(0, current + delta);
+  save();
+  renderRefMode();
+}
+
+function renderRefMode() {
+  const wrap = document.getElementById('refMode');
+  if (!wrap || wrap.style.display === 'none') return;
+  const params = new URLSearchParams(location.search);
+  const court = parseInt(params.get('ref'));
+  if (!court) return;
+  const m = findRefMatch(court);
+  const startMin = (() => {
+    if (!m || m.timeSlot == null) return null;
+    const [h, mm] = (state.settings.startTime || '11:00').split(':').map(Number);
+    return h * 60 + mm + m.timeSlot * (state.settings.matchMinutes || 30);
+  })();
+  if (!m) {
+    wrap.innerHTML = `
+      <div class="ref-header">
+        <span class="ref-court">COURT ${court}</span>
+        <button class="ref-exit" onclick="exitRefMode()">✕ Exit Ref Mode</button>
+      </div>
+      <div class="ref-empty"><div class="ic">🏐</div><p>No matches scheduled on this court yet.</p></div>
+    `;
+    return;
+  }
+  const t1 = teamById(m.team1Id);
+  const t2 = teamById(m.team2Id);
+  if (!t1 || !t2) {
+    wrap.innerHTML = '<div class="ref-empty"><p>Match data missing.</p></div>';
+    return;
+  }
+  const out = matchOutcome(m);
+  const isLive = isLiveMatch(m);
+  let statusClass = 'upcoming', statusText = 'UPCOMING';
+  if (out.complete) { statusClass = 'complete'; statusText = 'FINAL'; }
+  else if (isLive) { statusClass = ''; statusText = '<span class="live-dot"></span> LIVE'; }
+  const w1 = out.complete && out.winnerId === m.team1Id;
+  const w2 = out.complete && out.winnerId === m.team2Id;
+  const sets1Set1 = m.team1Set1 != null ? m.team1Set1 : 0;
+  const sets1Set2 = m.team1Set2 != null ? m.team1Set2 : 0;
+  const sets2Set1 = m.team2Set1 != null ? m.team2Set1 : 0;
+  const sets2Set2 = m.team2Set2 != null ? m.team2Set2 : 0;
+  const teamPanel = (team, side, win, s1, s2) => `
+    <div class="ref-team ${win ? 'winning' : ''}">
+      <div class="ref-team-pool">POOL ${m.pool || 'A'} · TEAM ${side}</div>
+      <div class="ref-team-name">${escapeHtml(team.name)}</div>
+      <div class="ref-set">
+        <span class="ref-set-label">S1</span>
+        <button class="ref-btn minus" onclick="refIncSet('${m.id}',${side},1,-1)" type="button">−</button>
+        <span class="ref-set-value">${s1}</span>
+        <button class="ref-btn" onclick="refIncSet('${m.id}',${side},1,1)" type="button">+</button>
+      </div>
+      <div class="ref-set">
+        <span class="ref-set-label">S2</span>
+        <button class="ref-btn minus" onclick="refIncSet('${m.id}',${side},2,-1)" type="button">−</button>
+        <span class="ref-set-value">${s2}</span>
+        <button class="ref-btn" onclick="refIncSet('${m.id}',${side},2,1)" type="button">+</button>
+      </div>
+    </div>
+  `;
+  let summary = '';
+  if (out.complete) {
+    const winner = out.winnerId === m.team1Id ? t1 : t2;
+    summary = `<div class="ref-summary"><div class="winner-line">🏆 ${escapeHtml(winner.name)} wins ${out.t1Sets}–${out.t2Sets} sets</div>Total points: ${out.t1Total} – ${out.t2Total}</div>`;
+  } else {
+    summary = `<div class="ref-summary">Tap + / − to update scores. Changes sync to every device.</div>`;
+  }
+  const next = findNextRefMatch(court, m);
+  const nextLine = next
+    ? `<div class="ref-next">Up next on Court ${court}: <strong>${escapeHtml(teamById(next.team1Id)?.name || '?')}</strong> vs <strong>${escapeHtml(teamById(next.team2Id)?.name || '?')}</strong> at <strong>${slotToTimeLabel(next.timeSlot)}</strong></div>`
+    : `<div class="ref-next">No more matches on Court ${court} after this one.</div>`;
+  wrap.innerHTML = `
+    <div class="ref-header">
+      <span class="ref-court">COURT ${court}</span>
+      <span class="ref-status ${statusClass}">${statusText}</span>
+      <button class="ref-exit" onclick="exitRefMode()">✕ Exit</button>
+    </div>
+    <div class="ref-match">
+      <div class="ref-teams">
+        ${teamPanel(t1, 1, w1, sets1Set1, sets1Set2)}
+        <div class="ref-vs">VS</div>
+        ${teamPanel(t2, 2, w2, sets2Set1, sets2Set2)}
+      </div>
+      ${summary}
+    </div>
+    ${nextLine}
+  `;
+}
+
+function checkRefMode() {
+  const params = new URLSearchParams(location.search);
+  const court = params.get('ref');
+  if (!court) return;
+  const wrap = document.getElementById('refMode');
+  if (!wrap) return;
+  wrap.style.display = 'flex';
+  document.body.classList.add('ref-mode-active');
+  renderRefMode();
+}
+
 /* =========================================================
    ☁️ CLOUD SYNC — Firebase Firestore
 ========================================================= */
@@ -4176,6 +4604,7 @@ function applyRemoteState(remote) {
   if (altInput) altInput.value = state.alternates || '';
   updatePlayerCount();
   renderAll();
+  if (document.body.classList.contains('ref-mode-active')) renderRefMode();
   if (state.settings.location !== oldLocation) fetchWeather();
   // If we migrated locally, push the fix back to the cloud so other devices get it
   if (migrated && cloudEnabled) scheduleCloudWrite();
