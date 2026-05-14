@@ -774,6 +774,88 @@
     }
   }
 
+  /* ---------- "NOW PLAYING" DASHBOARD WIDGET ---------- */
+  .now-playing-card {
+    background: linear-gradient(135deg, #FFF8EE 0%, #FFFFFF 100%);
+    border: 2px solid var(--orange);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 6px 24px rgba(255,90,10,0.18);
+  }
+  .now-playing-card.live {
+    border-color: var(--red);
+    background: linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%);
+    animation: nowPlayingPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes nowPlayingPulse {
+    0%, 100% { box-shadow: 0 6px 22px rgba(231,76,60,0.20); }
+    50% { box-shadow: 0 8px 36px rgba(231,76,60,0.38); }
+  }
+  .np-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2.5px;
+    color: var(--red);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .np-header.upcoming { color: var(--orange-deep); }
+  .np-header .live-dot { background: var(--red); width: 9px; height: 9px; margin-right: 0; }
+  .np-matches {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 600px) { .np-matches { grid-template-columns: 1fr; } }
+  .np-match {
+    background: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 5px solid var(--orange);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .np-match.pool-a { border-left-color: var(--orange); }
+  .np-match.pool-b { border-left-color: #1A8FE3; }
+  .np-match-meta {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--gray-500);
+    margin-bottom: 5px;
+  }
+  .np-teams {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--navy);
+  }
+  .np-vs { color: var(--gray-500); font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+  .np-team-name { flex: 1; }
+  .np-team-name.right { text-align: right; }
+  .np-sets-line {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--navy);
+    margin-top: 6px;
+    letter-spacing: 1.5px;
+  }
+  .np-sets-line .label { color: var(--gray-500); font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-right: 4px; }
+
+  /* ---------- BRACKET CONNECTOR LINES (SVG overlay) ---------- */
+  .bracket { position: relative; }
+  .bracket-svg {
+    position: absolute;
+    left: 0; top: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bracket-match { position: relative; z-index: 1; }
+
   /* ---------- LIVE MATCH BADGE ---------- */
   .match-row.is-live {
     border-color: var(--red);
@@ -1778,6 +1860,8 @@
         </div>
       </div>
     </div>
+
+    <div class="now-playing-card" id="nowPlayingCard" style="display:none"></div>
 
     <div class="venue-card" id="venueCard">
       <div class="venue-info">
@@ -3259,6 +3343,8 @@ function renderBracket() {
       `).join('')}
     </div>
   `;
+  // Draw connector lines between rounds after the DOM has laid out
+  requestAnimationFrame(() => drawBracketConnectors());
   // Champion?
   const lastRound = state.playoffs.bracket[state.playoffs.bracket.length - 1];
   const final = lastRound[0];
@@ -3304,6 +3390,61 @@ function fireConfetti() {
   }
   setTimeout(() => wrap.remove(), 6000);
 }
+
+function drawBracketConnectors() {
+  const bracketEl = document.querySelector('#bracketWrap .bracket');
+  if (!bracketEl) return;
+  bracketEl.querySelectorAll('.bracket-svg').forEach(el => el.remove());
+  const rounds = Array.from(bracketEl.querySelectorAll('.bracket-round'));
+  if (rounds.length < 2) return;
+  const bracketRect = bracketEl.getBoundingClientRect();
+  const totalW = bracketEl.scrollWidth;
+  const totalH = bracketEl.scrollHeight;
+  const lines = [];
+  rounds.forEach((roundEl, ri) => {
+    if (ri === rounds.length - 1) return; // final round has no outgoing line
+    const matches = Array.from(roundEl.querySelectorAll('.bracket-match'));
+    const nextMatches = Array.from(rounds[ri + 1].querySelectorAll('.bracket-match'));
+    matches.forEach((matchEl, mi) => {
+      const nextMatch = nextMatches[Math.floor(mi / 2)];
+      if (!nextMatch) return;
+      const r1 = matchEl.getBoundingClientRect();
+      const r2 = nextMatch.getBoundingClientRect();
+      const x1 = r1.right - bracketRect.left;
+      const y1 = r1.top + r1.height / 2 - bracketRect.top;
+      const x2 = r2.left - bracketRect.left;
+      const y2 = r2.top + r2.height / 2 - bracketRect.top;
+      const midX = x1 + (x2 - x1) / 2;
+      lines.push(`M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`);
+    });
+  });
+  if (!lines.length) return;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.classList.add('bracket-svg');
+  svg.setAttribute('width', String(totalW));
+  svg.setAttribute('height', String(totalH));
+  svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
+  lines.forEach(d => {
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#C44100');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-opacity', '0.45');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+  });
+  bracketEl.insertBefore(svg, bracketEl.firstChild);
+}
+
+// Redraw connectors when window resizes (debounced)
+let _bracketResizeTimer = null;
+window.addEventListener('resize', () => {
+  if (_bracketResizeTimer) clearTimeout(_bracketResizeTimer);
+  _bracketResizeTimer = setTimeout(drawBracketConnectors, 150);
+});
 
 function renderBracketMatch(m, ri, mi) {
   const renderSlot = (slot, score, side) => {
@@ -3446,7 +3587,72 @@ function renderVenue() {
   document.getElementById('venueMapsBtn').href = `https://www.google.com/maps/search/?api=1&query=${q}`;
 }
 
+function renderNowPlaying() {
+  const el = document.getElementById('nowPlayingCard');
+  if (!el) return;
+  if (!state.matches || !state.matches.length) {
+    el.style.display = 'none';
+    return;
+  }
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const isTournamentDay = todayKey === TOURNAMENT_DATE;
+  if (!isTournamentDay) {
+    el.style.display = 'none';
+    return;
+  }
+  const liveMatches = state.matches.filter(m => isLiveMatch(m));
+  let mode, matches, timeLabel = '';
+  if (liveMatches.length) {
+    mode = 'live';
+    matches = liveMatches;
+  } else {
+    const [h, mm] = (state.settings.startTime || '11:00').split(':').map(Number);
+    const dur = state.settings.matchMinutes || 30;
+    const nowMin = today.getHours() * 60 + today.getMinutes();
+    const upcoming = state.matches
+      .filter(m => !matchOutcome(m).complete && m.timeSlot != null)
+      .map(m => ({ m, startMin: h * 60 + mm + m.timeSlot * dur }))
+      .filter(x => x.startMin >= nowMin)
+      .sort((a, b) => a.startMin - b.startMin);
+    if (!upcoming.length) {
+      el.style.display = 'none';
+      return;
+    }
+    mode = 'upcoming';
+    const nextStart = upcoming[0].startMin;
+    matches = upcoming.filter(x => x.startMin === nextStart).map(x => x.m);
+    timeLabel = slotToTimeLabel(upcoming[0].m.timeSlot);
+  }
+  el.style.display = '';
+  el.className = 'now-playing-card ' + mode;
+  const header = mode === 'live'
+    ? `<div class="np-header"><span class="live-dot"></span>NOW PLAYING</div>`
+    : `<div class="np-header upcoming">⏰ NEXT UP · ${timeLabel}</div>`;
+  el.innerHTML = header + `<div class="np-matches">` + matches.map(m => {
+    const t1 = teamById(m.team1Id);
+    const t2 = teamById(m.team2Id);
+    if (!t1 || !t2) return '';
+    const hasSetScores = m.team1Set1 != null || m.team2Set1 != null || m.team1Set2 != null || m.team2Set2 != null;
+    const setsLine = mode === 'live' && hasSetScores
+      ? `<div class="np-sets-line"><span class="label">S1</span>${m.team1Set1 ?? '—'}–${m.team2Set1 ?? '—'}${(m.team1Set2 != null || m.team2Set2 != null) ? `<span class="label" style="margin-left:10px">S2</span>${m.team1Set2 ?? '—'}–${m.team2Set2 ?? '—'}` : ''}</div>`
+      : '';
+    return `
+      <div class="np-match pool-${(m.pool || 'A').toLowerCase()}">
+        <div class="np-match-meta">COURT ${m.court || '—'} · POOL ${m.pool || 'A'}</div>
+        <div class="np-teams">
+          <span class="np-team-name">${escapeHtml(t1.name)}</span>
+          <span class="np-vs">vs</span>
+          <span class="np-team-name right">${escapeHtml(t2.name)}</span>
+        </div>
+        ${setsLine}
+      </div>
+    `;
+  }).join('') + `</div>`;
+}
+
 function renderDashboard() {
+  renderNowPlaying();
   const played = state.matches.filter(m => matchOutcome(m).complete).length;
   const totalPts = state.matches.reduce((s, m) => s + (m.team1Set1 || 0) + (m.team1Set2 || 0) + (m.team2Set1 || 0) + (m.team2Set2 || 0), 0);
   const standings = computeStandings();
